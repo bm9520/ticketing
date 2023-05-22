@@ -4,6 +4,7 @@ Ticketing Macro written with Python3.
 I made this for my mom's birthday present to get a concert ticket she wanted to watch.
 
 It needs Chromedriver to be installed.
+This code is written for 'INTERPARK TICKET'.
 
 I set the cursor points to my settings, so change it to your environment.
 
