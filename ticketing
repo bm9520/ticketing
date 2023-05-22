@@ -1,0 +1,142 @@
+import pyautogui as pag
+from PIL import ImageGrab
+import keyboard
+import time
+import random
+import telepot
+from datetime import datetime
+import winsound as ws
+# 봇 구동을 위한 변수
+token = `${TOKEN}`
+mc = `${mc}`
+bot = telepot.Bot(token)
+
+# 그림 저장 로컬 주소
+path=r"d:\Temp\text.png"
+# 봇 행동 규칙 함수
+def handle(msg):
+    if len(msg['text']) == 6:
+        global txt
+        txt = msg['text']
+    else:
+        bot.sendMessage(mc,'reinput.')
+bot.message_loop(handle)
+
+# 각종 위치 좌표
+sector_da = (1244, 487)
+sector_na = (1247, 461)
+sector_ra = (1256, 522)
+plcda_start = (211,338)
+plcda_fin = (634, 1096)
+plcna_start = (294, 336)
+plcna_fin = (634, 1093)
+plcra_start = (191, 339)
+plcra_fin = (612, 1094)
+warning = (2233, 251)
+fin = (1360, 1064)
+fin_after = (1091, 187)
+fin_after_color = (35, 35, 35)
+start=(546, 542)
+end=(1031, 752)
+back_button=(1269, 1132)
+next_button=(1373, 1054)
+input_pos=(605, 810)
+input_fin_pos=(917, 924)
+left=start[0]
+top=start[1]
+width=end[0]-start[0]
+height=end[1]-start[1]
+check_skyblue=(756, 369)
+renewal=(992, 569)
+
+# 좌석 색깔 판별 함수
+def color(RGB):
+    c_p = (119, 110, 231)
+    c_no = (245, 245, 245)
+    c_white = (255,255,255)
+    if RGB == c_p: return "purple"
+    else: return "other"
+
+def find(plc_start,plc_fin):
+    global SB # 함수 바깥에서도 SB를 쓸 수 있도록
+    SB = 0
+    screen = ImageGrab.grab()
+    for j in range(plc_start[1],plc_fin[1]):
+        for i in range(plc_start[0],plc_fin[0]):
+            A = color(screen.getpixel((i,j)))
+            if (A == "purple"):
+                pag.click((i,j)) # pag 사용하려면 import pyautogui as pag 코드 선행적으로 실행
+                time.sleep(0.1) # time.sleep 사용하려면 import time 코드 선행적으로 실행
+                pag.click(fin)
+                SB=1
+                break
+        if SB==1:
+            break
+
+def next_stage(sector):
+    c_white = (255,255,255)
+    while 1:
+        if keyboard.is_pressed('f3'): # 사용하려면 선행적으로 import keyboard 코드 실행
+            print("force quit") # f3을 누르면 강제로 종료
+            break
+        pag.click(sector)
+        time.sleep(0.2)
+        screen = ImageGrab.grab()
+        if screen.getpixel(warning) != c_white:
+            time.sleep(0.2)
+            pag.click(warning)
+            time.sleep(0.2)
+        else:
+            break
+
+
+start_hour = datetime.now().hour
+start_min = datetime.now().minute
+bot.sendMessage(mc, 'Now {}h {}min macro start'.format(start_hour,start_min))
+SB = 0
+while SB == 0:
+    now_hour = datetime.now().hour
+    now_min = datetime.now().minute
+    if (now_hour==0+start_hour) and (now_min==1+start_min):
+        bot.sendMessage(mc, '1hour past, need to input capcha')
+        pag.click(back_button)
+        time.sleep(1)
+        pag.click(next_button)
+        time.sleep(1)
+        while 1:
+            screen=pag.screenshot(path, region=(left,top,width,height))
+            bot.sendPhoto(chat_id=mc, photo=open(path,'rb'))
+            txt = ""
+            while 1:
+                if txt != "":
+                    pag.click(input_pos)
+                    time.sleep(0.1)
+                    pag.typewrite(txt,interval=0.1)
+                    time.sleep(0.1)
+                    pag.click(input_fin_pos)
+                    break
+            time.sleep(1)
+            screen=ImageGrab.grab()
+            if screen.getpixel(check_skyblue) != (138, 153, 236):
+                break
+            else:
+                bot.sendMessage(mc, 'need to reinput, refresh plz.')
+                pag.click(renewal)
+        start_hour = datetime.now().hour
+        start_min = datetime.now().minute
+    find(plcda_start,plcda_fin) # 다구역 탐색
+    if keyboard.is_pressed('F3') or SB == 1: break # F3 누를 경우 매크로 중단
+    time.sleep(0.5)
+    next_stage(sector_na) # 나 층 이동
+    time.sleep(0.5)
+    find(plcna_start,plcna_fin) # 나층 탐색
+    if keyboard.is_pressed('F3') or SB == 1: break
+    time.sleep(0.5)
+    next_stage(sector_ra) # 라층 이동
+    time.sleep(0.5)
+    find(plcra_start,plcra_fin) # 나층 탐색
+    if keyboard.is_pressed('F3') or SB == 1: break
+    time.sleep(0.5)
+    next_stage(sector_da)
+    time.sleep(0.5)
+bot.sendMessage(mc, 'macro end')
